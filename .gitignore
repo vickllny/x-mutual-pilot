@@ -6,3 +6,5 @@ CLAUDE.md
 __pycache__/
 *.py[cod]
 data/
+output/
+.playwright-cli/

@@ -36,6 +36,26 @@ class SettingsTests(unittest.TestCase):
         self.assertTrue(diagnostics["ready"])
         self.assertNotIn("top-secret", str(diagnostics))
 
+    def test_controlled_auto_requires_mode_and_x_approval(self) -> None:
+        with self.assertRaisesRegex(ConfigError, "controlled-auto"):
+            Settings.from_environment(
+                {
+                    "X_BEARER_TOKEN": "secret",
+                    "X_ACCOUNT_USER_ID": "123",
+                    "X_CONTROLLED_AUTO_ENABLED": "true",
+                    "X_AI_REPLY_APPROVED": "true",
+                }
+            )
+        with self.assertRaisesRegex(ConfigError, "X_AI_REPLY_APPROVED"):
+            Settings.from_environment(
+                {
+                    "X_BEARER_TOKEN": "secret",
+                    "X_ACCOUNT_USER_ID": "123",
+                    "X_AGENT_MODE": "controlled-auto",
+                    "X_CONTROLLED_AUTO_ENABLED": "true",
+                }
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

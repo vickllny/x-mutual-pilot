@@ -1,4 +1,4 @@
-"""Minimal read-only X API v2 client."""
+"""X API v2 adapter with explicit read and user-context write paths."""
 
 from __future__ import annotations
 
@@ -19,17 +19,21 @@ class XApiError(RuntimeError):
 
 
 class XApiClient:
-    USER_FIELDS = "id,name,username,protected,verified"
+    USER_FIELDS = (
+        "id,name,username,description,protected,verified,public_metrics"
+    )
 
     def __init__(
         self,
         bearer_token: str,
         *,
+        user_access_token: str | None = None,
         base_url: str = "https://api.x.com/2",
         timeout_seconds: float = 20.0,
         opener: Callable[..., object] = urlopen,
     ) -> None:
         self._bearer_token = bearer_token
+        self._user_access_token = user_access_token
         self._base_url = base_url.rstrip("/")
         self._timeout_seconds = timeout_seconds
         self._opener = opener
@@ -39,6 +43,119 @@ class XApiClient:
 
     def following(self, user_id: str) -> list[dict[str, object]]:
         return list(self._iter_users(f"/users/{user_id}/following"))
+
+    def user_posts(
+        self, user_id: str, *, since_id: str | None = None
+    ) -> list[dict[str, object]]:
+        params = {
+            "max_results": "100",
+            "exclude": "retweets,replies",
+            "tweet.fields": (
+                "id,text,author_id,conversation_id,created_at,lang,"
+                "possibly_sensitive,referenced_tweets"
+            ),
+        }
+        if since_id:
+            params["since_id"] = since_id
+        return self._get_records(f"/users/{user_id}/tweets", params)
+
+    def mentions(
+        self, user_id: str, *, since_id: str | None = None
+    ) -> list[dict[str, object]]:
+        params = {
+            "max_results": "100",
+            "tweet.fields": (
+                "id,text,author_id,conversation_id,created_at,lang,"
+                "possibly_sensitive,referenced_tweets"
+            ),
+        }
+        if since_id:
+            params["since_id"] = since_id
+        return self._get_records(f"/users/{user_id}/mentions", params)
+
+    def get_post(self, post_id: str) -> dict[str, object]:
+        payload = self._request_json(
+            "GET",
+            f"/tweets/{post_id}",
+            params={
+                "tweet.fields": (
+                    "id,text,author_id,conversation_id,created_at,lang,"
+                    "possibly_sensitive"
+                )
+            },
+        )
+        self._raise_partial_errors(payload)
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise XApiError("X API response field 'data' must be an object")
+        return data
+
+    def create_reply(
+        self, text: str, post_id: str, *, made_with_ai: bool = False
+    ) -> dict[str, object]:
+        body: dict[str, object] = {
+            "text": text,
+            "reply": {"in_reply_to_tweet_id": post_id},
+        }
+        if made_with_ai:
+            body["made_with_ai"] = True
+        payload = self._request_json(
+            "POST",
+            "/tweets",
+            body=body,
+            use_user_token=True,
+        )
+        self._raise_partial_errors(payload)
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise XApiError("X API response field 'data' must be an object")
+        return data
+
+    def follow_user(
+        self, source_user_id: str, target_user_id: str
+    ) -> dict[str, object]:
+        payload = self._request_json(
+            "POST",
+            f"/users/{source_user_id}/following",
+            body={"target_user_id": target_user_id},
+            use_user_token=True,
+        )
+        self._raise_partial_errors(payload)
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise XApiError("X API response field 'data' must be an object")
+        return data
+
+    @staticmethod
+    def _raise_partial_errors(payload: dict[str, object]) -> None:
+        if payload.get("errors"):
+            raise XApiError("X API returned one or more partial errors")
+
+    def _get_records(
+        self, path: str, base_params: dict[str, str]
+    ) -> list[dict[str, object]]:
+        records: list[dict[str, object]] = []
+        token: str | None = None
+        seen_tokens: set[str] = set()
+        while True:
+            params = dict(base_params)
+            if token:
+                params["pagination_token"] = token
+            payload = self._request_json("GET", path, params=params)
+            self._raise_partial_errors(payload)
+            data = payload.get("data", [])
+            if not isinstance(data, list) or not all(
+                isinstance(item, dict) for item in data
+            ):
+                raise XApiError("X API response field 'data' must be a list")
+            records.extend(data)
+            meta = payload.get("meta", {})
+            if not isinstance(meta, dict) or meta.get("next_token") is None:
+                return records
+            token = str(meta["next_token"])
+            if token in seen_tokens:
+                raise XApiError("X API returned a repeated pagination token")
+            seen_tokens.add(token)
 
     def _iter_users(self, path: str) -> Iterator[dict[str, object]]:
         token: str | None = None
@@ -52,10 +169,8 @@ class XApiClient:
             if token is not None:
                 params["pagination_token"] = token
 
-            payload = self._get_json(path, params)
-            errors = payload.get("errors")
-            if errors:
-                raise XApiError("X API returned one or more partial errors")
+            payload = self._request_json("GET", path, params=params)
+            self._raise_partial_errors(payload)
             data = payload.get("data", [])
             if not isinstance(data, list):
                 raise XApiError("X API response field 'data' must be a list")
@@ -75,16 +190,34 @@ class XApiClient:
                 raise XApiError("X API returned a repeated pagination token")
             seen_tokens.add(token)
 
-    def _get_json(self, path: str, params: dict[str, str]) -> dict[str, object]:
-        url = f"{self._base_url}{path}?{urlencode(params)}"
+    def _request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, str] | None = None,
+        body: dict[str, object] | None = None,
+        use_user_token: bool = False,
+    ) -> dict[str, object]:
+        query = f"?{urlencode(params)}" if params else ""
+        url = f"{self._base_url}{path}{query}"
+        token = self._user_access_token if use_user_token else self._bearer_token
+        if not token:
+            raise XApiError("X user access token is required for write operations")
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "User-Agent": "x-mutual-pilot/0.2",
+        }
+        data = None
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+            data = json.dumps(body).encode()
         request = Request(
             url,
-            method="GET",
-            headers={
-                "Authorization": f"Bearer {self._bearer_token}",
-                "Accept": "application/json",
-                "User-Agent": "x-mutual-pilot/0.1",
-            },
+            method=method,
+            data=data,
+            headers=headers,
         )
         try:
             with self._opener(request, timeout=self._timeout_seconds) as response:

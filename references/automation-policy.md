@@ -18,11 +18,15 @@ enabling any write behavior.
 
 - Run in `observe` mode.
 - Keep all writes paused.
-- Require human approval for any future reply or follow-back action.
-- Recheck policy, relationship state, expiry, quotas, and idempotency immediately
-  before any future execution.
+- Require human approval for Assisted replies and follow-back actions.
+- Allow Controlled Auto only for explicit mentions when the dedicated enable
+  flag and written X approval flag are both present.
+- Recheck policy, source post, expiry, quotas, cooldown, opt-out, and idempotency
+  immediately before execution.
 - Stop writes on authentication, authorization, account restriction, or
   rate-limit failures.
+- Persistently pause writes after 401 or 403 and never blindly replay an
+  uncertain write.
 
 Official reference:
 

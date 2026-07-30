@@ -1,4 +1,4 @@
 interface:
   display_name: "X Mutual Pilot"
-  short_description: "Inspect X mutual relationships with safety gates"
-  default_prompt: "Use $x-mutual-pilot to inspect an X account's mutual relationships without performing write actions."
+  short_description: "Review and execute X interactions with safety gates"
+  default_prompt: "Use $x-mutual-pilot to sync X relationships, review candidates, and keep every write behind the required safety gates."

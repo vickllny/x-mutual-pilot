@@ -3,4 +3,4 @@
 from .relationships import build_relationship_snapshot
 
 __all__ = ["build_relationship_snapshot"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

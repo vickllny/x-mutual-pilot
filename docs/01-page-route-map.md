@@ -1,19 +1,19 @@
 # Page and Route Map
 
-No UI, route configuration, or navigation code exists yet.
+The management UI is a loopback-only standard-library HTTP application.
 
-| Planned surface | Entry | Purpose | Source |
+| Surface | Route | Purpose | Source |
 |---|---|---|---|
-| Approval queue | Operator console | Review, edit, approve, reject, or snooze candidates | Not implemented |
-| Action detail | Approval queue item | Show target, rationale, risks, draft history, and expiry | Not implemented |
-| Operations status | Operator console | Display mode, write pause, quotas, metrics, and alerts | Not implemented |
-
-The expected flow is:
+| Dashboard | `GET /` | Counts, mode, pause state, and review queue | `src/x_mutual_pilot/web.py` |
+| Approve | `POST /candidates/:id/approve` | Preserve original draft and approve edits | `DashboardApp.handle_action` |
+| Reject | `POST /candidates/:id/reject` | Reject and append an audit event | `DashboardApp.handle_action` |
+| Snooze | `POST /candidates/:id/snooze` | Hide for one hour, then return to pending | `DashboardApp.handle_action` |
+| Pause | `POST /pause` | Persist the emergency write pause | `DashboardApp.handle_action` |
 
 ```text
-Candidate discovery -> Approval queue -> Review/edit -> Approve or reject
--> Policy recheck -> Execution -> Audit result
+Discovery -> Review queue -> Edit / approve / reject / snooze
+-> CLI confirmation -> Policy recheck -> X execution -> Audit result
 ```
 
-Add concrete paths, components, and navigation entries only after a UI framework
-and route structure are selected.
+All mutations require a per-process CSRF token. The server refuses non-loopback
+binding. Resume and live execution are intentionally CLI-only confirmation flows.

@@ -1,32 +1,32 @@
 # Release Checklist
 
-The project has a local read-only MVP but has not been verified with live X
-credentials.
+The single-account implementation is feature-complete locally but has not been
+verified with operator-owned live X credentials.
 
-## Before Any Implementation Release
+## Before Live Use
 
-- Revalidate official X API availability, pricing, scopes, quotas, and automation policy.
+- Revalidate X API pricing, scopes, quotas, self-serve reply restrictions, and automation policy.
 - Use a dedicated X Developer App and test account.
 - Keep secrets outside the repository and logs.
-- Default to `observe` or `assisted`; keep `X_WRITES_PAUSED=true`.
+- Start in `observe`; keep `X_WRITES_PAUSED=true`.
+- Obtain written X approval before enabling AI auto-replies.
 
 ## Verification
 
 - Run `PYTHONPATH=src python3 -m unittest discover -s tests -v`.
-- Run `python3 scripts/x_mutual_pilot.py doctor` with a dedicated test App.
-- Confirm relationship sync uses only the two documented GET endpoints.
-- Run the smallest relevant unit, contract, and integration tests from `docs/04-test-map.md`.
-- Confirm Observe mode produces zero write calls.
-- Confirm unapproved, expired, duplicate, and policy-rejected actions cannot execute.
-- Verify 401/403 stop writes and 429 applies backoff.
-- Confirm every decision and write attempt has an audit record.
+- Run `python3 -m compileall -q src scripts tests`.
+- Run `python3 scripts/x_mutual_pilot.py doctor`.
+- Verify the loopback dashboard at desktop and mobile widths.
+- Confirm Observe mode produces zero writes.
+- Confirm unapproved, expired, duplicate, opted-out, and no-intent actions fail.
+- Confirm 401/403 persistently pause writes and 429 is not blindly retried.
+- Confirm resume and manual execution require explicit confirmation flags.
+- Confirm every decision and attempt has an audit record.
 
 ## Controlled Live Check
 
-- Obtain any required written approval before enabling AI auto-replies.
-- Start with a dedicated test account and minimal daily limits.
-- Verify the emergency write pause before the first live write.
-- Compare the X result with the stored execution record.
-
-Record exact commands and environment-specific steps after the implementation
-stack is selected.
+- Verify a read-only relationship sync first.
+- Verify one approved follow and one explicit-mention reply with minimal limits.
+- Confirm the X result matches the stored execution record.
+- Confirm AI replies set `made_with_ai`.
+- Enable Controlled Auto only after Assisted-mode acceptance passes.

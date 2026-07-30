@@ -1,41 +1,51 @@
 ---
 name: x-mutual-pilot
-description: Safely inspect an X account's followers, following, and mutual relationships and prepare policy-aware interaction workflows. Use when Codex needs to validate X account automation configuration, produce a read-only relationship snapshot, assess proposed follow-back or reply workflows, or enforce X automation safety boundaries.
+description: Safely operate an X mutual-relationship and interaction copilot with relationship sync, post and mention discovery, follow-back scoring, reply drafts, approval queues, audit, and gated execution. Use when Codex needs to inspect X relationships, create or review action candidates, run the loopback approval console, enforce X automation policy, or execute an explicitly approved X action.
 ---
 
 # X Mutual Pilot
 
-Operate in read-only mode unless the user explicitly requests a later implemented
-workflow and all approval gates exist.
+Default to Observe mode. Perform a live write only after the user explicitly
+requests it and every runtime gate passes.
 
-## Inspect relationships
+## Run the workflow
 
 1. Read `references/automation-policy.md` before proposing any write behavior.
 2. Read `references/x-api.md` before changing API calls or fields.
-3. Require `X_BEARER_TOKEN` and a numeric `X_ACCOUNT_USER_ID`.
-4. Run the configuration check:
+3. Read `references/decision-rules.md` before changing scoring or policy.
+4. Require `X_BEARER_TOKEN` and a numeric `X_ACCOUNT_USER_ID`.
+5. Run the configuration check and initialize state:
 
    ```bash
    python3 scripts/x_mutual_pilot.py doctor
+   python3 scripts/x_mutual_pilot.py init-db
    ```
 
-5. Produce a relationship snapshot:
+6. Discover candidates:
 
    ```bash
-   python3 scripts/x_mutual_pilot.py sync-relationships \
-     --output data/relationships.json
+   python3 scripts/x_mutual_pilot.py sync-relationships
+   python3 scripts/x_mutual_pilot.py poll-posts
+   python3 scripts/x_mutual_pilot.py list-candidates --status pending
    ```
 
-6. Report counts and failures without exposing tokens or authorization headers.
+7. Review through CLI or `python3 scripts/x_mutual_pilot.py serve`.
+8. Require `--confirm-live-write` for manual execution.
+9. Report counts and failures without exposing tokens or authorization headers.
 
 ## Preserve safety
 
 - Keep `X_AGENT_MODE=observe` and `X_WRITES_PAUSED=true` by default.
 - Use only official X API endpoints; never script the X website.
 - Treat a follow as a relationship signal, not consent to receive automated replies.
-- Do not add a write path without approval, policy rechecks, limits, idempotency,
-  audit records, and an emergency pause.
+- Keep AI replies blocked unless X's written approval is represented by
+  `X_AI_REPLY_APPROVED=true`.
+- Require explicit mention intent for API replies.
+- Preserve approval, expiry, policy rechecks, limits, idempotency, audit, and the
+  emergency pause.
 - Stop on authentication, permission, or rate-limit errors; do not blindly retry.
+- Bind the dashboard only to loopback. Resume writes only through the confirmed
+  CLI command.
 
 ## Validate changes
 

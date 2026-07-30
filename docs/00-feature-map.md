@@ -1,17 +1,17 @@
 # Feature Map
 
-The repository now includes a read-only relationship MVP. Write workflows remain
-design-only.
+All planned single-account workflows are implemented. Live X acceptance remains
+operator-gated because credentials and written approval are external.
 
-| Module | Planned feature | Status | Main reference | Planned tests |
+| Module | Feature | Status | Main files | Tests |
 |---|---|---|---|---|
-| X Adapter | Read followers/following with pagination and safe HTTP errors | Read-only MVP | `src/x_mutual_pilot/x_api.py`, `scripts/x_mutual_pilot.py` | `tests/test_x_api.py` |
-| Relationships | Deduplicate profiles and calculate mutuals by X user ID | Read-only MVP | `src/x_mutual_pilot/relationships.py` | `tests/test_relationships.py` |
-| Post Watcher | Discover and filter new posts from mutuals | Designed | `docs/06-solution-design.md` §6.3 | Unit and integration tests |
-| Follow-back | Score new followers and explain recommendations | Designed | `docs/06-solution-design.md` §6.4 | Unit tests |
-| Reply Drafts | Generate safe, editable reply candidates | Designed | `docs/06-solution-design.md` §6.5 | Unit tests |
-| Policy & Risk | Validate mode and default write pause; future consent, limits, and opt-outs | Partial | `src/x_mutual_pilot/config.py`, `references/automation-policy.md` | `tests/test_config.py` |
-| Approval & Execution | Approve, edit, reject, and safely execute actions | Designed | `docs/06-solution-design.md` §§6.7–6.8 | Integration tests |
-| Audit & Monitoring | Record decisions, results, metrics, and alerts | Designed | `docs/06-solution-design.md` §10 | Integration tests |
+| X Adapter | Read relationships/timelines; revalidate posts; follow and reply | Implemented, live-gated | `src/x_mutual_pilot/x_api.py` | `tests/test_x_api.py` |
+| Relationships | Persist snapshots, detect changes, calculate mutuals | Implemented | `store.py`, `relationships.py` | `test_store.py`, `test_relationships.py` |
+| Post Watcher | Poll mutual posts and explicit mentions with cursors and filters | Implemented | `src/x_mutual_pilot/services.py` | `tests/test_services.py` |
+| Follow-back | Explainably score new followers | Implemented | `src/x_mutual_pilot/scoring.py` | `tests/test_scoring.py` |
+| Reply Drafts | Generate local or optional OpenAI Responses API drafts | Implemented | `src/x_mutual_pilot/drafts.py` | `tests/test_drafts.py` |
+| Policy & Risk | Enforce consent, opt-outs, pauses, expiry, cooldown, and limits | Implemented | `src/x_mutual_pilot/policy.py` | `tests/test_policy.py` |
+| Approval & Execution | Approve, edit, reject, snooze, and idempotently execute | Implemented, live-gated | `store.py`, `executor.py`, `cli.py` | `test_executor.py`, `test_store.py` |
+| Audit & Console | Persist audit events, metrics, pause state, and review UI | Implemented | `store.py`, `web.py` | `tests/test_web.py` |
 
 Update only affected rows when implementation status or source locations change.

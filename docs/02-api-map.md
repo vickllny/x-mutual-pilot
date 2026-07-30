@@ -1,18 +1,18 @@
 # API Map
 
-All external operations are planned through the official X API via a single
-adapter. Exact endpoint versions, access tiers, prices, scopes, and automation
-permissions must be revalidated before implementation.
+All external operations use official APIs through dedicated adapters. Access
+tiers, prices, scopes, and automation permissions must be revalidated before
+live use.
 
-| Capability | Method / direction | Authentication / guard | Reference |
+| Capability | Method / direction | Authentication / guard | Source |
 |---|---|---|---|
-| Current account | Read | OAuth, minimum read scope | `docs/06-solution-design.md` §6.1 |
 | Followers | `GET /2/users/:id/followers` | Bearer token, pagination, stop on errors | `src/x_mutual_pilot/x_api.py` |
 | Following | `GET /2/users/:id/following` | Bearer token, pagination, stop on errors | `src/x_mutual_pilot/x_api.py` |
-| Follow activity | Inbound event | Subscription and webhook validation | §§6.2, 7.1 |
-| Posts / filtered stream | Read or inbound event | Rule maintenance, deduplication | §§6.3, 7.2 |
-| Create reply | Write | Approval, policy recheck, limits, idempotency | §§6.8, 7.2 |
-| Follow user | Write | Score, approval, relationship recheck, limits | §§6.8, 7.1 |
+| User posts | `GET /2/users/:id/tweets` | Bearer token, `since_id`, deduplication | `src/x_mutual_pilot/x_api.py` |
+| Mentions | `GET /2/users/:id/mentions` | Bearer token, explicit-intent source | `src/x_mutual_pilot/x_api.py` |
+| Post lookup | `GET /2/tweets/:id` | Required immediately before reply | `src/x_mutual_pilot/executor.py` |
+| Create reply | `POST /2/tweets` | User token plus all policy gates | `src/x_mutual_pilot/x_api.py` |
+| Follow user | `POST /2/users/:id/following` | User token, approval, limits, idempotency | `src/x_mutual_pilot/x_api.py` |
+| Draft reply | `POST /v1/responses` | Optional OpenAI key, `store: false` | `src/x_mutual_pilot/drafts.py` |
 
 Do not add private endpoints, browser automation, or undocumented API behavior.
-The current implementation contains no POST, PUT, PATCH, or DELETE request path.

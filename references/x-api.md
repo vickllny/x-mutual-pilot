@@ -1,4 +1,4 @@
-# X API Read-Only Reference
+# X API Reference
 
 Reviewed against official X documentation on 2026-07-30.
 
@@ -8,31 +8,35 @@ Reviewed against official X documentation on 2026-07-30.
 |---|---|---|
 | Read followers | `GET /2/users/:id/followers` | Bearer token |
 | Read following | `GET /2/users/:id/following` | Bearer token |
+| Read user posts | `GET /2/users/:id/tweets` | Bearer token |
+| Read mentions | `GET /2/users/:id/mentions` | Bearer token |
+| Revalidate post | `GET /2/tweets/:id` | Bearer token |
+| Follow user | `POST /2/users/:id/following` | OAuth user access token |
+| Create reply | `POST /2/tweets` | OAuth user access token |
 
-The client requests `id,name,username,protected,verified`, follows
-`meta.next_token`, and stops immediately on HTTP errors. It never sends a write
-request.
+The adapter follows `meta.next_token`, rejects partial errors, detects repeated
+pagination tokens, and does not retry writes. Treat all IDs and tokens as opaque
+strings. Keep credentials out of errors and logs.
 
-## Response assumptions
+## Reply restriction
 
-```json
-{
-  "data": [{"id": "123", "username": "example", "name": "Example"}],
-  "meta": {"next_token": "opaque-token"}
-}
-```
+For self-serve API access, only send a reply when the original author explicitly
+summoned the replying account through a mention or qualifying quote. A follow or
+an unrelated mutual post is not sufficient intent.
 
-Treat IDs and pagination tokens as opaque strings. Do not derive identity from a
-username because it can change.
+AI-generated replies set `made_with_ai: true`. Every reply rechecks that the
+source post still exists immediately before the write.
 
 ## Change checklist
 
-- Recheck endpoint availability, access tier, scopes, fields, and rate limits.
-- Preserve pagination-loop detection.
-- Keep authorization headers and tokens out of errors and logs.
-- Add fake-response contract tests before changing response parsing.
+- Recheck access tier, OAuth scopes, fields, prices, and rate limits.
+- Preserve pagination-loop and partial-response detection.
+- Add fake-response contract tests before changing payload parsing.
+- Never add browser automation or undocumented endpoints.
 
 Official references:
 
 - https://docs.x.com/x-api/users/follows/introduction
-- https://docs.x.com/x-api/overview
+- https://docs.x.com/x-api/posts/timelines/introduction
+- https://docs.x.com/x-api/posts/manage-tweets/introduction
+- https://docs.x.com/x-api/posts/get-post-by-id
