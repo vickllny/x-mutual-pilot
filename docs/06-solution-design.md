@@ -511,6 +511,8 @@ APPROVAL_EXPIRY_MINUTES
 
 ## 12. 分阶段实施
 
+当前进度（2026-07-30）：已开始 Phase 1，只读分页客户端、配置检查、互关集合快照和离线测试已经落地；尚未使用真实 X 凭据验收。
+
 ### Phase 0：接入确认
 
 - 创建独立 X Developer App；
@@ -576,6 +578,7 @@ APPROVAL_EXPIRY_MINUTES
 
 ```text
 x-mutual-pilot/
+├── README.md
 ├── SKILL.md
 ├── agents/
 │   └── openai.yaml
@@ -590,11 +593,12 @@ x-mutual-pilot/
 ├── references/
 │   ├── x-api.md
 │   ├── automation-policy.md
-│   └── decision-rules.md
-└── scripts/
-    ├── sync-relationships.*
-    ├── evaluate-candidate.*
-    └── execute-approved-action.*
+│   └── decision-rules.md（待实施）
+├── scripts/
+│   └── x_mutual_pilot.py
+├── src/
+│   └── x_mutual_pilot/
+└── tests/
 ```
 
 实现时保持 `SKILL.md` 简洁，将 API、政策和评分细则放入 `references/`，将可重复且需要确定性的操作放入 `scripts/`。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Mutual Pilot"
+  short_description: "Inspect X mutual relationships with safety gates"
+  default_prompt: "Use $x-mutual-pilot to inspect an X account's mutual relationships without performing write actions."

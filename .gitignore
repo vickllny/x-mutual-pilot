@@ -1,0 +1,8 @@
+.env
+.claude/
+.codex/
+AGENTS.md
+CLAUDE.md
+__pycache__/
+*.py[cod]
+data/

@@ -1,15 +1,16 @@
 # Feature Map
 
-This repository is in the solution-design stage; no executable modules exist yet.
+The repository now includes a read-only relationship MVP. Write workflows remain
+design-only.
 
 | Module | Planned feature | Status | Main reference | Planned tests |
 |---|---|---|---|---|
-| X Adapter | Official API access, OAuth, pagination, rate-limit handling | Designed | `docs/06-solution-design.md` §6.1 | Contract tests |
-| Relationships | Sync followers/following and calculate mutuals | Designed | `docs/06-solution-design.md` §6.2 | Unit and integration tests |
+| X Adapter | Read followers/following with pagination and safe HTTP errors | Read-only MVP | `src/x_mutual_pilot/x_api.py`, `scripts/x_mutual_pilot.py` | `tests/test_x_api.py` |
+| Relationships | Deduplicate profiles and calculate mutuals by X user ID | Read-only MVP | `src/x_mutual_pilot/relationships.py` | `tests/test_relationships.py` |
 | Post Watcher | Discover and filter new posts from mutuals | Designed | `docs/06-solution-design.md` §6.3 | Unit and integration tests |
 | Follow-back | Score new followers and explain recommendations | Designed | `docs/06-solution-design.md` §6.4 | Unit tests |
 | Reply Drafts | Generate safe, editable reply candidates | Designed | `docs/06-solution-design.md` §6.5 | Unit tests |
-| Policy & Risk | Enforce consent, limits, opt-outs, and write pauses | Designed | `docs/06-solution-design.md` §6.6 | Unit and integration tests |
+| Policy & Risk | Validate mode and default write pause; future consent, limits, and opt-outs | Partial | `src/x_mutual_pilot/config.py`, `references/automation-policy.md` | `tests/test_config.py` |
 | Approval & Execution | Approve, edit, reject, and safely execute actions | Designed | `docs/06-solution-design.md` §§6.7–6.8 | Integration tests |
 | Audit & Monitoring | Record decisions, results, metrics, and alerts | Designed | `docs/06-solution-design.md` §10 | Integration tests |
 
